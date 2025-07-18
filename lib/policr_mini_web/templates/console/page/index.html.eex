@@ -1,0 +1,6 @@
+<script type="text/javascript">
+  __GLOBAL__ = <%= {:safe, @global |> Casex.to_camel_case() |> Jason.encode!()} %>;
+</script>
+<div id="app"></div>
+<link rel="stylesheet" href="<%= Routes.static_path(@conn, ~s{/assets/console.css}) %>" />
+<script type="module" src="<%= Routes.static_path(@conn, ~s{/assets/console.js}) %>"></script>
