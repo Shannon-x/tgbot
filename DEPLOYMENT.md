@@ -77,10 +77,10 @@ vim .env
 ```
 
 必须配置的变量：
-- `TG_BOT_TOKEN`: 从 @BotFather 获取的 Bot Token
-- `TG_OWNER_ID`: 您的 Telegram 用户 ID
-- `SECRET_KEY_BASE`: 应用密钥（上面已自动生成）
-- `PHX_HOST`: 您的域名或服务器 IP
+- `POLICR_MINI_BOT_TOKEN`: 从 @BotFather 获取的 Bot Token
+- `POLICR_MINI_BOT_OWNER_ID`: 您的 Telegram 用户 ID
+- `POLICR_MINI_SERVER_SECRET_KEY_BASE`: 应用密钥（上面已自动生成）
+- `POLICR_MINI_SERVER_ROOT_URL`: 您的域名或服务器 IP（包含协议）
 
 ### 4. 启动服务
 
@@ -255,21 +255,21 @@ sudo systemctl status policr-mini
 查看 `.env.example` 文件了解所有可用的配置选项。主要配置包括：
 
 #### 核心配置
-- `TG_BOT_TOKEN`: Bot Token（必需）
-- `TG_OWNER_ID`: 管理员 ID（必需）
-- `SECRET_KEY_BASE`: 应用密钥（必需）
+- `POLICR_MINI_BOT_TOKEN`: Bot Token（必需）
+- `POLICR_MINI_BOT_OWNER_ID`: 管理员 ID（必需）
+- `POLICR_MINI_SERVER_SECRET_KEY_BASE`: 应用密钥（必需）
+- `POLICR_MINI_SERVER_ROOT_URL`: 服务根URL（必需）
 
 #### 数据库配置
-- `DB_HOST`: 数据库主机
-- `DB_PORT`: 数据库端口
-- `DB_NAME`: 数据库名称
-- `DB_USER`: 数据库用户
-- `DB_PASS`: 数据库密码
+- `POLICR_MINI_DATABASE_URL`: 完整的数据库连接URL
+- `POLICR_MINI_DATABASE_POOL_SIZE`: 连接池大小
+- `POSTGRES_PASSWORD`: PostgreSQL密码（Docker使用）
 
-#### 性能优化
-- `POOL_SIZE`: 数据库连接池大小
-- `MESSAGE_CONCURRENCY`: 消息处理并发数
-- `MESSAGE_RATE_LIMIT`: 消息速率限制
+#### 机器人配置
+- `POLICR_MINI_BOT_WORK_MODE`: 工作模式（polling/webhook）
+- `POLICR_MINI_BOT_WEBHOOK_URL`: Webhook URL（webhook模式需要）
+- `POLICR_MINI_BOT_WEBHOOK_SERVER_PORT`: Webhook服务端口
+- `POLICR_MINI_BOT_API_BASE_URL`: Telegram API地址
 
 ### 功能开关
 
