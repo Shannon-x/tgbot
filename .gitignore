@@ -47,6 +47,14 @@ npm-debug.log
 # Ignore dev-env secret config.
 /dev.env
 
+# IMPORTANT: Never commit .env files with real credentials!
+.env
+.env.*
+!.env.example
+!.env.template
+prod.env
+*.secret
+
 # Ignore native libraries.
 /priv/native/
 
