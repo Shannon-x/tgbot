@@ -63,18 +63,39 @@ cd policr-mini
 
 2. **配置环境变量**
 ```bash
-cp prod.env.example prod.env
-# 编辑 prod.env 文件，填入必要的配置
+cp .env.example .env
+# 编辑 .env 文件，填入必要的配置（特别是 TG_BOT_TOKEN 和 TG_OWNER_ID）
 ```
 
 3. **启动服务**
+
+开发环境：
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+生产环境：
+```bash
+docker-compose -f docker-compose.yml -f docker-compose.production.yml up -d
 ```
 
 4. **访问管理后台**
 ```
 http://your-server:4000
+```
+
+### 构建镜像
+
+使用提供的构建脚本：
+```bash
+# 构建本地镜像
+./scripts/build.sh
+
+# 构建并推送到 Registry
+REGISTRY=your-registry.com VERSION=1.0.0 ./scripts/build.sh
+
+# 构建多架构镜像
+BUILD_MULTIARCH=true REGISTRY=your-registry.com ./scripts/build.sh
 ```
 
 ### 手动部署

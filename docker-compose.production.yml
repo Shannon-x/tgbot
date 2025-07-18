@@ -1,0 +1,119 @@
+# 生产环境特定配置
+services:
+  # 生产环境应用配置
+  app:
+    image: ${DOCKER_IMAGE:-policr-mini:latest}
+    deploy:
+      replicas: ${APP_REPLICAS:-1}
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    environment:
+      # 生产环境特定配置
+      MIX_ENV: prod
+      POOL_SIZE: ${POOL_SIZE:-10}
+      # 日志级别
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # 监控配置
+      ENABLE_PROMETHEUS: ${ENABLE_PROMETHEUS:-true}
+      ENABLE_TELEMETRY: ${ENABLE_TELEMETRY:-true}
+
+  # PostgreSQL 主从配置（可选）
+  postgres:
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+    command: |
+      postgres
+      -c shared_buffers=256MB
+      -c max_connections=200
+      -c effective_cache_size=1GB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+      -c work_mem=4MB
+      -c huge_pages=off
+
+  # Redis 主从配置（可选）
+  redis:
+    command: |
+      redis-server
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+
+  # 备份服务
+  backup:
+    image: postgres:16-alpine
+    environment:
+      PGHOST: postgres
+      PGDATABASE: ${DB_NAME:-policr_mini}
+      PGUSER: ${DB_USER:-postgres}
+      PGPASSWORD: ${DB_PASS:-postgres}
+    volumes:
+      - ./backups:/backups
+    command: |
+      sh -c 'while true; do
+        pg_dump -Fc > /backups/backup_$$(date +%Y%m%d_%H%M%S).dump
+        find /backups -name "backup_*.dump" -mtime +7 -delete
+        sleep 86400
+      done'
+    depends_on:
+      - postgres
+    profiles:
+      - backup
+
+  # Prometheus 监控（可选）
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    profiles:
+      - monitoring
+
+  # Grafana 可视化（可选）
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+volumes:
+  prometheus_data:
+  grafana_data:

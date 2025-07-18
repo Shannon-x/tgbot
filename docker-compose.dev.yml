@@ -1,28 +1,55 @@
+# 开发环境特定配置
 services:
-  db:
-    image: postgres:16
-    ports:
-      - 5432:5432
+  # 开发模式的应用（使用源码挂载）
+  app:
+    build:
+      target: build  # 使用构建阶段而不是运行时
+    command: mix phx.server
+    volumes:
+      - .:/app:cached
+      - /app/_build
+      - /app/deps
+      - /app/assets/node_modules
+      - /app/webapps/node_modules
     environment:
-      POSTGRES_PASSWORD: postgres
+      MIX_ENV: dev
+      PHX_HOST: localhost
 
-  tsdb:
-    image: influxdb:2.7
+  # 开发用 InfluxDB（时序数据库）
+  influxdb:
+    image: influxdb:2.7-alpine
     ports:
-      - 8086:8086
+      - "8086:8086"
     environment:
       DOCKER_INFLUXDB_INIT_MODE: setup
-      DOCKER_INFLUXDB_INIT_USERNAME: demo
-      DOCKER_INFLUXDB_INIT_PASSWORD: demopass
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: adminpass
       DOCKER_INFLUXDB_INIT_ORG: policr_mini
       DOCKER_INFLUXDB_INIT_BUCKET: policr_mini_dev
-      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: __token__
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: dev_token_123
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
 
-  bot-api:
-    image: gramoss/telegram-bot-api:7.2
+  # 开发用 Telegram Bot API Server（可选）
+  telegram-bot-api:
+    image: aiogram/telegram-bot-api:latest
     ports:
-      - 8081:80
+      - "8081:8081"
     environment:
-      TELEGRAM_API_ID: $TELEGRAM_API_ID
-      TELEGRAM_API_HASH: $TELEGRAM_API_HASH
-      TELEGRAM_LOCAL_MODE: true
+      TELEGRAM_API_ID: ${TELEGRAM_API_ID}
+      TELEGRAM_API_HASH: ${TELEGRAM_API_HASH}
+      TELEGRAM_LOCAL: "true"
+    profiles:
+      - bot-api
+
+  # 开发用邮件服务（可选）
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    profiles:
+      - mail
+
+volumes:
+  influxdb_data:
