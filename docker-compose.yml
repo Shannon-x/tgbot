@@ -8,8 +8,8 @@ x-app-base: &app-base
     - .env
   restart: unless-stopped
   depends_on:
-    - postgres
-    - redis
+    postgres:
+      condition: service_healthy
 
 # 数据库配置
 x-postgres-base: &postgres-base
@@ -35,8 +35,8 @@ services:
     volumes:
       - app_assets:${POLICR_MINI_BOT_ASSETS_PATH:-/app/_assets}
     environment:
-      # 数据库配置
-      POLICR_MINI_DATABASE_URL: ${POLICR_MINI_DATABASE_URL:-postgresql://postgres:postgres@postgres:5432/policr_mini}
+      # 数据库配置 - 构建 URL
+      POLICR_MINI_DATABASE_URL: "postgresql://${DB_USER:-postgres}:${DB_PASS:-postgres}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${DB_NAME:-policr_mini}"
       POLICR_MINI_DATABASE_POOL_SIZE: ${POLICR_MINI_DATABASE_POOL_SIZE:-10}
       # 服务器配置
       POLICR_MINI_SERVER_ROOT_URL: ${POLICR_MINI_SERVER_ROOT_URL}
@@ -65,11 +65,14 @@ services:
       POLICR_MINI_INFLUX_TOKEN: ${POLICR_MINI_INFLUX_TOKEN}
       POLICR_MINI_INFLUX_BUCKET: ${POLICR_MINI_INFLUX_BUCKET:-policr_mini_prod}
       POLICR_MINI_INFLUX_ORG: ${POLICR_MINI_INFLUX_ORG:-policr_mini}
-      POLICR_MINI_INFLUX_HOST: ${POLICR_MINI_INFLUX_HOST}
+      POLICR_MINI_INFLUX_HOST: "${INFLUXDB_PROTOCOL:-http}://${INFLUXDB_HOST:-influxdb}:${INFLUXDB_PORT:-8086}"
       # Google Analytics（可选）
       POLICR_MINI_GOOGLE_ANALYTICS_ID: ${POLICR_MINI_GOOGLE_ANALYTICS_ID}
-      # Redis URL
-      REDIS_URL: ${REDIS_URL:-redis://redis:6379/0}
+      # Redis 配置 - 构建 URL
+      REDIS_URL: "redis://${REDIS_PASSWORD:+:${REDIS_PASSWORD}@}${REDIS_HOST:-redis}:${REDIS_PORT:-6379}/${REDIS_DB:-0}"
+      # 功能开关
+      ENABLE_REDIS: ${ENABLE_REDIS:-false}
+      ENABLE_INFLUXDB: ${ENABLE_INFLUXDB:-false}
 
   # PostgreSQL 数据库
   postgres:
@@ -79,20 +82,25 @@ services:
     environment:
       POSTGRES_DB: ${DB_NAME:-policr_mini}
       POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASS:-postgres}
 
   # Redis 缓存
   redis:
     image: redis:7-alpine
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    command: >
+      redis-server
+      --appendonly yes
+      ${REDIS_PASSWORD:+--requirepass ${REDIS_PASSWORD}}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "${REDIS_PASSWORD:+-a ${REDIS_PASSWORD}}", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
+    profiles:
+      - redis
 
   # Nginx 反向代理（可选）
   nginx:

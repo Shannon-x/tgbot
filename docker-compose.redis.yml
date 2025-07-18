@@ -1,0 +1,15 @@
+version: '3.8'
+
+# 开发环境 Redis 配置覆盖
+services:
+  # 在开发环境中默认启用 Redis
+  redis:
+    profiles: []  # 移除 profile，使其默认启动
+
+  # 应用服务添加 Redis 依赖
+  app:
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy

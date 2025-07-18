@@ -99,12 +99,59 @@ docker compose -f docker-compose.yml -f docker-compose.production.yml build
 - **prometheus**: 监控数据收集（profile: monitoring）
 - **grafana**: 监控可视化（profile: monitoring）
 
+## 启用 Redis
+
+Redis 是可选服务，用于缓存和会话存储。要启用 Redis：
+
+**方法 1：使用 profile**
+```bash
+# 在 .env 中设置
+ENABLE_REDIS=true
+
+# 启动时包含 redis profile
+docker compose --profile redis up -d
+```
+
+**方法 2：使用额外的 compose 文件**
+```bash
+# 启动服务时包含 Redis 配置
+docker compose -f docker-compose.yml -f docker-compose.redis.yml up -d
+```
+
+**方法 3：修改 docker-compose.yml**
+删除 redis 服务中的 `profiles` 部分，使其默认启动。
+
+### Redis 配置选项
+
+```bash
+# 基本配置
+REDIS_HOST=redis           # Redis 主机地址
+REDIS_PORT=6379           # Redis 端口
+REDIS_DB=0                # 数据库编号
+REDIS_PASSWORD=yourpass   # 设置密码（推荐生产环境使用）
+
+## 启用 InfluxDB
+
+InfluxDB 用于时序数据存储和监控。要启用 InfluxDB：
+
+```bash
+# 在 .env 中设置
+ENABLE_INFLUXDB=true
+INFLUXDB_HOST=influxdb
+INFLUXDB_PORT=8086
+INFLUXDB_PROTOCOL=http
+POLICR_MINI_INFLUX_TOKEN=your_token
+POLICR_MINI_INFLUX_BUCKET=policr_mini_prod
+POLICR_MINI_INFLUX_ORG=policr_mini
+```
+
 ## 环境变量说明
 
 详见 `.env.example` 文件，主要包括：
 
 - **核心配置**: Bot Token、管理员 ID、密钥等
-- **数据库配置**: 连接信息、池大小等
+- **数据库配置**: 分离的连接参数（主机、端口、用户名、密码）
+- **Redis 配置**: 分离的连接参数
 - **性能配置**: 并发数、速率限制等
 - **功能开关**: 各功能模块的启用/禁用
 
@@ -134,4 +181,6 @@ docker compose down -v
 3. **构建失败**: 清理 Docker 缓存后重试
 4. **内存不足**: 调整 Docker 资源限制
 
-更多详细信息请参考 [DEPLOYMENT.md](DEPLOYMENT.md)。
+更多详细信息请参考：
+- [DEPLOYMENT.md](DEPLOYMENT.md) - 完整部署指南
+- [ENV_MIGRATION.md](ENV_MIGRATION.md) - 环境变量迁移指南
